@@ -18,6 +18,7 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment: spads-production
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
@@ -25,9 +26,9 @@ jobs:
         run: python3 tools/validate_catalog.py
       - name: Configure SSH
         env:
-          SSH_PRIVATE_KEY: ${{ secrets.MAP_DEPLOY_SSH_KEY }}
-          SSH_HOST: ${{ secrets.MAP_DEPLOY_HOST }}
-          SSH_KNOWN_HOSTS: ${{ secrets.MAP_DEPLOY_KNOWN_HOSTS }}
+          SSH_PRIVATE_KEY: ${{ secrets.SPADS_DEPLOY_SSH_KEY }}
+          SSH_HOST: ${{ secrets.SPADS_DEPLOY_HOST }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SPADS_DEPLOY_KNOWN_HOSTS }}
         run: |
           test -n "$SSH_PRIVATE_KEY" && test -n "$SSH_HOST" && test -n "$SSH_KNOWN_HOSTS"
           mkdir -p ~/.ssh
@@ -37,15 +38,15 @@ jobs:
           chmod 600 ~/.ssh/map_deploy_key ~/.ssh/known_hosts
       - name: Upload manifest and deploy script
         env:
-          SSH_HOST: ${{ secrets.MAP_DEPLOY_HOST }}
-          SSH_USER: ${{ secrets.MAP_DEPLOY_USER }}
+          SSH_HOST: ${{ secrets.SPADS_DEPLOY_HOST }}
+          SSH_USER: ${{ secrets.SPADS_DEPLOY_USER }}
         run: |
           test -n "$SSH_USER"
           ssh -i ~/.ssh/map_deploy_key -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'mkdir -p ~/map-deploy'
           scp -i ~/.ssh/map_deploy_key -o StrictHostKeyChecking=yes maps.json tools/deploy_maps.py "$SSH_USER@$SSH_HOST:~/map-deploy/"
       - name: Deploy and verify index
         env:
-          SSH_HOST: ${{ secrets.MAP_DEPLOY_HOST }}
-          SSH_USER: ${{ secrets.MAP_DEPLOY_USER }}
+          SSH_HOST: ${{ secrets.SPADS_DEPLOY_HOST }}
+          SSH_USER: ${{ secrets.SPADS_DEPLOY_USER }}
         run: |
           ssh -i ~/.ssh/map_deploy_key -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'python3 ~/map-deploy/deploy_maps.py ~/map-deploy/maps.json'

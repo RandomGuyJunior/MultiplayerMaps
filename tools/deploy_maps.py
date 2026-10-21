@@ -45,7 +45,7 @@ def deploy(manifest):
             raise ValueError(f"Invalid or unsupported archive name: {name}")
         url = entry["download_url"]
         target = MAP_DIR / name
-        fd, temp_name = tempfile.mkstemp(prefix=".incoming-", suffix=".sd7", dir=MAP_DIR)
+        fd, temp_name = tempfile.mkstemp(prefix="moddedbar-incoming-", suffix=".download")
         temp = Path(temp_name)
         try:
             with os.fdopen(fd, "wb") as out:
@@ -60,7 +60,7 @@ def deploy(manifest):
                 print(f"Unchanged: {name}", flush=True)
                 continue
             os.chmod(temp, 0o644)
-            os.replace(temp, target)
+            # Copy to a staging filename without .sd7 inside the watched\n            # directory, then atomically publish the completed archive.\n            staging = MAP_DIR / (".staging-" + name + ".tmp")\n            try:\n                with temp.open("rb") as source, staging.open("wb") as dest:\n                    import shutil\n                    shutil.copyfileobj(source, dest)\n                    dest.flush()\n                    os.fsync(dest.fileno())\n                os.chmod(staging, 0o644)\n                os.replace(staging, target)\n            finally:\n                staging.unlink(missing_ok=True)
             changed.append(name)
             print(f"Installed: {name}", flush=True)
         finally:

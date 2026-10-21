@@ -65,7 +65,7 @@ def deploy(manifest):
             print(f"Installed: {name}", flush=True)
         finally:
             temp.unlink(missing_ok=True)
-    if changed:
+    if entries:
         # PathChanged may not fire for an atomic rename, so explicitly trigger
         # the existing index service as well as retaining the path watcher.
         # This does not restart the map API or other infrastructure.
@@ -78,14 +78,14 @@ def deploy(manifest):
                 (trigger.stderr.strip() or trigger.stdout.strip()),
                 flush=True,
             )
-        # Wait for the catalog to reflect the archive(s).
+        # Always verify every declared archive, including unchanged ones.
         deadline = time.monotonic() + 180
         while time.monotonic() < deadline:
             try:
                 catalog = json.loads(CATALOG.read_text(encoding="utf-8"))
                 indexed = {r.get("download", {}).get("filename"): r for r in catalog}
-                if all(n in indexed and indexed[n].get("download", {}).get("md5") == hashlib.md5((MAP_DIR / n).read_bytes()).hexdigest() for n in changed):
-                    print("Indexed: " + ", ".join(changed), flush=True)
+                if all(n in indexed and indexed[n].get("download", {}).get("md5") == hashlib.md5((MAP_DIR / n).read_bytes()).hexdigest() for n in (entry["file"] for entry in entries)):
+                    print("Indexed: " + ", ".join(entry["file"] for entry in entries), flush=True)
                     break
             except (FileNotFoundError, json.JSONDecodeError):
                 pass
@@ -101,7 +101,7 @@ def deploy(manifest):
                 capture_output=True, text=True,
             )
             print("Indexer recent logs:\\n" + journal.stdout[-6000:], flush=True)
-            raise RuntimeError("Map archives deployed, but indexer did not update the catalog within 180 seconds")
+            raise RuntimeError("Declared maps are missing or stale in the index after 180 seconds")
     else:
         print("No map archive changes", flush=True)
 

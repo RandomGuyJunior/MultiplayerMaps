@@ -4,6 +4,8 @@ on:
     branches: [main]
     paths:
       - maps.json
+      - 'maps/**'
+      - tools/validate_catalog.py
       - tools/deploy_maps.py
       - .github/workflows/deploy-maps.yml
   workflow_dispatch:
@@ -47,7 +49,11 @@ jobs:
         run: |
           test -n "$SSH_USER"
           ssh -i ~/.ssh/map_deploy_key -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'mkdir -p ~/map-deploy'
+          ssh -i ~/.ssh/map_deploy_key -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'mkdir -p ~/map-deploy/maps'
           scp -i ~/.ssh/map_deploy_key -o StrictHostKeyChecking=yes maps.json tools/deploy_maps.py "$SSH_USER@$SSH_HOST:~/map-deploy/"
+          if compgen -G 'maps/*.sd7' > /dev/null || compgen -G 'maps/*.sdz' > /dev/null; then
+            find maps -maxdepth 1 -type f \( -name '*.sd7' -o -name '*.sdz' \) -print0 | xargs -0 -r scp -i ~/.ssh/map_deploy_key -o StrictHostKeyChecking=yes -t "$SSH_USER@$SSH_HOST:~/map-deploy/maps/"
+          fi
       - name: Deploy and verify index
         env:
           SSH_HOST: ${{ secrets.SPADS_DEPLOY_HOST }}

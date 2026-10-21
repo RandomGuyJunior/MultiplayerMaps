@@ -1,0 +1,7 @@
+*.sd7
+*.sdz
+*.zip
+.env
+.env.*
+!.env.example
+__pycache__/

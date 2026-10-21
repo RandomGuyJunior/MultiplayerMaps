@@ -1,5 +1,7 @@
 *.sd7
 *.sdz
+!maps/*.sd7
+!maps/*.sdz
 *.zip
 .env
 .env.*

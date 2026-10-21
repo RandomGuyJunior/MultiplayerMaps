@@ -36,6 +36,10 @@ jobs:
           printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/map_deploy_key
           printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
           chmod 600 ~/.ssh/map_deploy_key ~/.ssh/known_hosts
+          if ! ssh-keygen -y -P '' -f ~/.ssh/map_deploy_key > /dev/null 2>&1; then
+            echo "::error::SPADS_DEPLOY_SSH_KEY is not a valid unencrypted SSH private key. Copy the complete multiline private key, not github_rapid.pub, into the spads-production environment secret."
+            exit 1
+          fi
       - name: Upload manifest and deploy script
         env:
           SSH_HOST: ${{ secrets.SPADS_DEPLOY_HOST }}

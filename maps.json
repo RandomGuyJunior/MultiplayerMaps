@@ -1,11 +1,18 @@
 [
   {
+    "name": "Bathtub Brawl V2",
+    "file": "Bathtub_Brawl_V2.sd7",
+    "source_type": "local",
+    "source_path": "maps/Bathtub_Brawl_V2.sd7",
+    "attribution": "RandomGuyJunior"
+  },
+  {
     "name": "Simmering Ravine 1.5",
     "file": "simmering_ravine_1.5.sd7",
+    "source_type": "remote",
     "source": "https://github.com/danielkopko/BarMaps",
     "download_url": "https://raw.githubusercontent.com/danielkopko/BarMaps/main/simmering_ravine_1.5.sd7",
     "minimap_url": "https://raw.githubusercontent.com/danielkopko/BarMaps/main/LuaMenu/Images/Minimaps/Simmering_Ravine_1.5.jpg",
-    "attribution": "danielkopko; based on All That Simmers by Nikuksis",
-    "status": "pending-hosting-integration"
+    "attribution": "danielkopko; based on All That Simmers by Nikuksis"
   }
 ]

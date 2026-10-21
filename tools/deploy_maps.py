@@ -7,6 +7,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import time
 import tempfile
 from urllib.request import Request, urlopen
 from urllib.parse import urlparse
@@ -65,9 +66,19 @@ def deploy(manifest):
         finally:
             temp.unlink(missing_ok=True)
     if changed:
-        # The existing systemd path unit automatically starts the indexer.
-        # Wait for it to complete; don't write the generated catalog ourselves.
-        import time
+        # PathChanged may not fire for an atomic rename, so explicitly trigger
+        # the existing index service as well as retaining the path watcher.
+        # This does not restart the map API or other infrastructure.
+        trigger = subprocess.run(
+            ["systemctl", "start", INDEX_SERVICE], capture_output=True, text=True
+        )
+        if trigger.returncode:
+            print(
+                "Indexer trigger failed (checking catalog anyway): " +
+                (trigger.stderr.strip() or trigger.stdout.strip()),
+                flush=True,
+            )
+        # Wait for the catalog to reflect the archive(s).
         deadline = time.monotonic() + 180
         while time.monotonic() < deadline:
             try:
@@ -80,6 +91,16 @@ def deploy(manifest):
                 pass
             time.sleep(2)
         else:
+            status = subprocess.run(
+                ["systemctl", "status", INDEX_SERVICE, "--no-pager", "-l"],
+                capture_output=True, text=True,
+            )
+            print("Indexer service diagnostics:\\n" + status.stdout[-4000:], flush=True)
+            journal = subprocess.run(
+                ["journalctl", "-u", INDEX_SERVICE, "-n", "35", "--no-pager"],
+                capture_output=True, text=True,
+            )
+            print("Indexer recent logs:\\n" + journal.stdout[-6000:], flush=True)
             raise RuntimeError("Map archives deployed, but indexer did not update the catalog within 180 seconds")
     else:
         print("No map archive changes", flush=True)
